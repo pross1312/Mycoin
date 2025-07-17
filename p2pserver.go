@@ -6,12 +6,6 @@ import (
 	"encoding/json"
 )
 
-const (
-	DEFAULT_CHANNEL_BUFFER = 128
-)
-
-type P2PChannelData struct {string; error}
-type P2PChannel chan P2PChannelData
 type P2PServer struct {
     Addr string
     Peers []string
@@ -91,15 +85,21 @@ func (sv *P2PServer) handleBroadCast() {
 	for {
 		select {
 		case conn := <- sv.newConnChannel:
+			if conn == nil {
+				break
+			}
 			id := conn.RemoteAddr().String()
 			olog(INFO, "New connection ", id);
 
-			write_channel := make(chan string, DEFAULT_CHANNEL_BUFFER)
+			write_channel := make(chan string, 128)
 			writers[id] = Writer { conn, write_channel }
 
 			go handleRead(id, conn, done_channel, sv.Handler)
 			go handleWrite(id, conn, write_channel)
 		case message_to_sent := <- sv.BroadCastChannel:
+			if len(message_to_sent) == 0 {
+				continue
+			}
 			for _, writer := range writers {
 				writer.channel <- message_to_sent
 			}
@@ -115,11 +115,13 @@ func (sv *P2PServer) handleBroadCast() {
 }
 
 func (sv *P2PServer) Start() error {
-	sv.clientDeadChannel = make(chan string, DEFAULT_CHANNEL_BUFFER)
-	sv.newConnChannel = make(chan net.Conn, DEFAULT_CHANNEL_BUFFER)
+	sv.newConnChannel = make(chan net.Conn, 10)
+	defer close(sv.newConnChannel)
+
+	sv.clientDeadChannel = make(chan string, 10)
+	defer close(sv.clientDeadChannel)
 
 	go sv.handleBroadCast()
-
 	go sv.connnectToPeers()
 
     server, err := net.Listen("tcp", sv.Addr)
@@ -128,6 +130,7 @@ func (sv *P2PServer) Start() error {
     }
     defer server.Close()
     olog(INFO, "Listening on ", server.Addr().String())
+
     for {
         conn, err := server.Accept()
         if err != nil {
@@ -137,4 +140,3 @@ func (sv *P2PServer) Start() error {
 		sv.newConnChannel <- conn
     }
 }
-

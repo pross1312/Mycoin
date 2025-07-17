@@ -41,7 +41,7 @@ func main() {
 
 	sv_addr := args[0]; args = args[1:]
 	message = fmt.Sprintf(msg_format, sv_addr)
-	broad_cast_channel := make(chan string, DEFAULT_CHANNEL_BUFFER)
+	broad_cast_channel := make(chan string, 128)
     server := P2PServer {
         Addr: sv_addr,
 		Peers: args,
