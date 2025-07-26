@@ -3,37 +3,14 @@ import { FaArrowRightLong } from "react-icons/fa6";
 import { AiOutlineTransaction } from "react-icons/ai";
 import { IoCubeOutline } from "react-icons/io5";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { formatTimestamp, HorizontalSep } from "#/utils";
 import Api from "#/api";
 
 const LIST_TYPE = {
   BLOCK: {label: "Latest Blocks", link: "VIEW ALL BLOCKS"},
   TRANSACTION: {label: "Latest Transactions", link: "VIEW ALL TRANSACTIONS"}
 };
-
-function HorizontalSep() {
-  return (
-    <div className="w-full bg-gray-600 h-[1px]">
-    </div>
-  );
-}
-
-export function parseMilis(timestamp) {
-  const date = new Date(timestamp);
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-  // return new Date(timestamp).toISOString()
-}
-
-export function formatTimestamp(timestamp) {
-  if (timestamp < 60) return `${timestamp} secs`;
-  if (timestamp < 3600) return `${Math.floor(timestamp / 60)} mins`;
-  if (timestamp < 86400) return `${Math.floor(timestamp / 3600)} hours`;
-  if (timestamp < 604800) return `${Math.floor(diff / 86400)} days`;
-  return parseMilis(timestamp);
-}
 
 function LabelListComponent({icon, id, timestamp, content, amount, shouldAddSepBottom}) {
   console.log(icon, id, timestamp, content, amount)
@@ -59,10 +36,10 @@ function LabelListComponent({icon, id, timestamp, content, amount, shouldAddSepB
   );
 }
 
-function LabelList({type, icon, data, contentFunc}) {
+function LabelList({type, icon, data, contentFunc, onLinkClicked}) {
   console.log(data);
   return (
-    <div className="text-white w-[500px] h-[560px] !bg-card rounded-lg border-1 border-gray-700 flex flex-col" style={{"boxShadow": "0 0.5rem 1.2rem rgba(82, 85, 92, .15)"}}>
+    <div className="text-white w-[500px] h-[560px] flex flex-col card">
       <div className="text-center w-full p-3 font-bold">
         {type.label}
       </div>
@@ -74,8 +51,10 @@ function LabelList({type, icon, data, contentFunc}) {
       </div>
       <HorizontalSep/>
       <div className="font-bold text-[0.7rem] cursor-pointer hover:text-gray-300 text-gray-400 text-center p-2 flex justify-center gap-2">
-        <div className="my-auto">{type.link}</div>
-        <div className="text-center my-auto"><FaArrowRightLong/></div>
+        <div className="my-auto flex gap-2" onClick={onLinkClicked}>
+          <div className="my-auto">{type.link}</div>
+          <div className="text-center my-auto"><FaArrowRightLong/></div>
+        </div>
       </div>
     </div>
   );
@@ -101,21 +80,22 @@ function TransactionContent({fromAddress, toAddress}) {
 }
 
 export default function() {
+  const navigate = useNavigate();
   const [blocks, setBlocks] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  useEffect(async () => {
-    try {
-      setBlocks(await Api.getLatestBlocks());
-      setTransactions(await Api.getLatestTransactions());
-    } catch(error) {
-      console.error(error);
-    }
+  useEffect(() => {
+    Api.getLatestBlocks().then(latestBlocks => {
+      setBlocks(latestBlocks);
+    }).catch(console.error);
+    Api.getLatestTransactions().then(latestTransactions => {
+      setTransactions(latestTransactions);
+    }).catch(console.error);
   }, []);
   return (
-    <div className="bg-black w-screen h-screen flex">
+    <div className="w-screen h-screen flex">
       <div className="my-auto flex w-full h-fit justify-center gap-5">
-        <LabelList type={LIST_TYPE.BLOCK} data={blocks} icon={<IoCubeOutline/>} contentFunc={BlockContent}/>
-        <LabelList type={LIST_TYPE.TRANSACTION} data={transactions} icon={<AiOutlineTransaction/>} contentFunc={TransactionContent}/>
+        <LabelList onLinkClicked={() => navigate("/blocks")} type={LIST_TYPE.BLOCK} data={blocks} icon={<IoCubeOutline/>} contentFunc={BlockContent}/>
+        <LabelList onLinkClicked={() => navigate("/transactions")} type={LIST_TYPE.TRANSACTION} data={transactions} icon={<AiOutlineTransaction/>} contentFunc={TransactionContent}/>
       </div>
     </div>
   );
