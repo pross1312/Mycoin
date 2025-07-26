@@ -2,6 +2,8 @@
 import { FaArrowRightLong } from "react-icons/fa6";
 import { AiOutlineTransaction } from "react-icons/ai";
 import { IoCubeOutline } from "react-icons/io5";
+import { useState, useEffect } from "react";
+import Api from "#/api";
 
 const LIST_TYPE = {
   BLOCK: {label: "Latest Blocks", link: "VIEW ALL BLOCKS"},
@@ -99,105 +101,16 @@ function TransactionContent({fromAddress, toAddress}) {
 }
 
 export default function() {
-  const blocks = [
-    {
-      id: 123321,
-      amount: 0.23123,
-      timestamp: 10000,
-      miner: {
-        name: "some name",
-        address: "some address"
-      },
-      transactionCount: 165,
-      duration: 10000
-    },
-    {
-      id: 123321,
-      amount: 0.23123,
-      timestamp: 10000,
-      miner: {
-        name: "some name",
-        address: "some address"
-      },
-      transactionCount: 165,
-      duration: 10000
-    },
-    {
-      id: 123321,
-      amount: 0.23123,
-      timestamp: 10000,
-      miner: {
-        name: "some name",
-        address: "some address"
-      },
-      transactionCount: 165,
-      duration: 10000
-    },
-    {
-      id: 123321,
-      amount: 0.23123,
-      timestamp: 10000,
-      miner: {
-        name: "some name",
-        address: "some address"
-      },
-      transactionCount: 165,
-      duration: 10000
-    },
-    {
-      id: 123321,
-      amount: 0.23123,
-      timestamp: 10000,
-      miner: {
-        name: "some name",
-        address: "some address"
-      },
-      transactionCount: 165,
-      duration: 10000
-    },
-    {
-      id: 123321,
-      amount: 0.23123,
-      timestamp: 10000,
-      miner: {
-        name: "some name",
-        address: "some address"
-      },
-      transactionCount: 165,
-      duration: 10000
-    },
-    {
-      id: 123321,
-      amount: 0.23123,
-      timestamp: 10000,
-      miner: {
-        name: "some name",
-        address: "some address"
-      },
-      transactionCount: 165,
-      duration: 10000
-    },
-    {
-      id: 123321,
-      amount: 0.23123,
-      timestamp: 10000,
-      miner: {
-        name: "some name",
-        address: "some address"
-      },
-      transactionCount: 165,
-      duration: 10000
-    },
-  ];
-  const transactions = [
-    {
-      id: 123321,
-      amount: 0.23123,
-      timestamp: 10000,
-      fromAddress: "some hash",
-      toAddress: "some verylong hashsdjhiofjiowejjeowiqjeoi",
-    },
-  ];
+  const [blocks, setBlocks] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  useEffect(async () => {
+    try {
+      setBlocks(await Api.getLatestBlocks());
+      setTransactions(await Api.getLatestTransactions());
+    } catch(error) {
+      console.error(error);
+    }
+  }, []);
   return (
     <div className="bg-black w-screen h-screen flex">
       <div className="my-auto flex w-full h-fit justify-center gap-5">
