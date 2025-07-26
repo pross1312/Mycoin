@@ -1,0 +1,57 @@
+@import "tailwindcss";
+* {
+    box-sizing: border-box;
+}
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    margin-top: theme('margin.0');
+    margin-bottom: theme('margin.0');
+    background-color: transparent;
+    border-radius: 0;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: theme('colors.gray.400');
+    border-radius: 0;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: theme('colors.gray.400');
+    border-radius: 0;
+  }
+
+  .card-link {
+    color: var(--color-card-link);
+    cursor: pointer;
+  }
+  .card-link:hover {
+    color: var(--color-card-link-hover);
+  }
+}
+@theme {
+    --color-pure-black: rgb(24,24,24);
+    --color-pure-white: rgb(255,255,255);
+    --color-white: var(--color-pure-white);
+    --color-black: var(--color-pure-black);
+    --color-card: rgb(17,17,17);
+    --color-card-link: var(--color-blue-300);
+    --color-card-link-hover: var(--color-blue-200);
+    --color-card-time-gray: var(--color-gray-500);
+
+
+    /* --color-bg: var(--color-black); */
+}
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
