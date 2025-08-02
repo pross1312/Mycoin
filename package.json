@@ -1,0 +1,23 @@
+{
+  "name": "mycoin-backend",
+  "version": "1.0.0",
+  "description": "Backend for Mycoin",
+  "license": "MIT",
+  "author": "21127720",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/main.js"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.1.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0"
+  }
+}
