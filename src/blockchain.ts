@@ -12,6 +12,14 @@ export class BlockChain {
         return block;
     }
 
+    replace_if_needed(chain: Array<Block>) {
+        if (chain.length > this.chain.length) {
+            this.chain = chain;
+            return true;
+        }
+        return false;
+    }
+
     static is_valid_chain(chain: Array<Block>) {
         if (!Block.genesis().equal(chain[0])) return false;
 
