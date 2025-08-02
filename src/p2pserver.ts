@@ -1,7 +1,5 @@
+import {PEERS, P2P_PORT} from "./const";
 import {WebSocket, WebSocketServer} from "ws";
-
-const P2P_PORT = Number(process.env.P2P_PORT || 10000);
-const PEERS = process.env.PEERS ? process.env.PEERS.split(';') : [];
 
 export type MessageHandler = (message: string) => void;
 

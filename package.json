@@ -8,7 +8,7 @@
   "main": "main.js",
   "scripts": {
     "build": "tsc -b",
-    "start": "node dist/main.js"
+    "start": "tsc -b && node dist/main.js"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",

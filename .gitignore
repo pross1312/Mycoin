@@ -2,3 +2,5 @@ dist/
 node_modules/
 tsconfig.tsbuild
 .env
+*.pem
+*.json
