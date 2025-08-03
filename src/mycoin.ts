@@ -19,11 +19,10 @@ export class MyCoin {
         const old_utxo_manager = this.utxo_manager;
         this.utxo_manager = new UTXOManager();
         for (const block of blocks) {
-            const {data} = block;
-            if (data === null) {
+            const {data: transactions} = block;
+            if (transactions === null) {
                 continue;
             }
-            const transactions = JSON.parse(data);
             const err = this.utxo_manager.update(transactions);
             if (err !== null) {
                 return err;
@@ -48,12 +47,8 @@ export class MyCoin {
         }
 
         for (const block of blocks) {
-            const {data} = block;
-            if (data === null) {
-                continue;
-            }
-            const transactions = JSON.parse(data);
-            const err = this.utxo_manager.update(transactions);
+            const {data: transactions} = block;
+            const err = this.utxo_manager.update(...transactions);
             if (err !== null) {
                 return err;
             }
@@ -79,8 +74,8 @@ export class MyCoin {
             return false
         } else if (this.blockchain.replace_if_needed(stored_chain)) {
             for (const block of this.blockchain.chain) {
-                if (block.data !== null) {
-                    const err = this.utxo_manager.update(JSON.parse(block.data));
+                if (block.data.length > 0) {
+                    const err = this.utxo_manager.update(...block.data);
                     if (err != null) {
                         throw err;
                     }

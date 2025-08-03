@@ -34,6 +34,9 @@ export class UTXOManager {
     }
 
     update(...transactions: Array<Transaction>): Error | null {
+        if (transactions.length === 0) {
+            return null;
+        }
         const cloned = [...this.utxo];
         for (const tx of transactions) {
             const err = this._update(tx);
@@ -46,7 +49,7 @@ export class UTXOManager {
     }
 
     private _update(transaction: Transaction): Error | null {
-        const {id, inputs, outputs} = transaction;
+        const {initiator, id, inputs, outputs} = transaction;
         let sum_input = 0;
         const output_str = `${JSON.stringify(outputs)}`;
         for (const input of inputs) {
@@ -56,7 +59,7 @@ export class UTXOManager {
                 return new Error("Could not find utxo");
             }
 
-            if (!ChainUtils.verify(`${output_str}${txid}${output_index}`, signature, ChainUtils.hex_to_public_key(prev_out.address))) {
+            if (!ChainUtils.verify(`${initiator}${output_str}${txid}${output_index}`, signature, ChainUtils.hex_to_public_key(prev_out.address))) {
                 return new Error("Invalid signature");
             }
 

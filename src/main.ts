@@ -76,7 +76,7 @@ const p2p_server = new P2PServer((message: string): string | null => {
 p2p_server.listen();
 p2p_server.connect_to_peers().then(sockets => {
     if (sockets.length === 0 && !mycoin.load_chain(BLOCK_CHAIN_FILE)) {
-        mycoin.add_blocks(Block.mine_block(mycoin.blockchain.last(), JSON.stringify(wallet.new_coin_base_transaction(100))));
+        mycoin.add_blocks(Block.mine_block(mycoin.blockchain.last(), wallet.public_key, [wallet.new_coin_base_transaction(100)]));
         mycoin.store_chain(BLOCK_CHAIN_FILE);
         return;
     } else if (sockets.length !== 0) {
@@ -102,12 +102,91 @@ const success_handler = (res: Response, data: any, status_code: number = 200) =>
     });
 }
 
+const format_name = (public_key: string): string => {
+    if (public_key.length === 0) return '';
+    return `0x${Buffer.from(public_key, 'utf-8').toString('hex').substr(0, 16)}`;
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.raw({type: '*/*'}));
 
-app.get("/block", (req: Request, res: Response) => {
-    return success_handler(res, mycoin.blockchain.chain);
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+    console.log(`New request: ${req.path}`);
+    return next();
+});
+
+app.get("/blocks", (req: Request, res: Response) => {
+    return success_handler(res, mycoin.blockchain.chain.slice(1).map((block, i) => { return {
+        Block: i+1,
+        Age: block.timestamp,
+        Txn: block.data.length,
+        Miner: {
+            short: format_name(block.miner),
+            full: block.miner
+        },
+        Reward: 0.12,
+    }}));
+});
+
+app.get("/latest-block", (req: Request, res: Response) => {
+    const {length: _length} = req.query;
+    let length = Number(_length);
+    if (isNaN(length) || length === 0) length = 5;
+    let i = Math.max(1, mycoin.blockchain.chain.length - length + 1);
+    const result = mycoin.blockchain.chain.slice(1).slice(-length!).map(x => { return {
+        id: i++,
+        timestamp: x.timestamp,
+        amount: x.data.reduce((acc: any, x: any) => acc + x.outputs.reduce((sum: any, txo: any) => txo.amount + sum, 0), 0),
+        miner: {
+            short: format_name(x.miner),
+            full: x.miner,
+        },
+        transactionCount: x.data.length,
+        duration: x.duration,
+    }}).reverse();
+    console.log(result);
+    return success_handler(res, result);
+});
+
+app.get("/latest-transaction", (req: Request, res: Response) => {
+    const {length: _length} = req.query;
+    let length = Number(_length);
+    if (isNaN(length) || length === 0) length = 5;
+
+    let result: any = [];
+    for (let i = mycoin.blockchain.chain.length - 1; length > 0 && i >= 1; i--) {
+        const block = mycoin.blockchain.chain[i];
+        const transactions = block.data;
+        const slice = transactions.reverse().slice(0, length)
+        length -= slice.length;
+        result = result.concat(slice);
+    }
+    result = result.map((x: any) => { return {
+        id: x.id,
+        amount: x.outputs.reduce((acc: any, output: any) => acc + (output.address === x.initiator ? 0 : output.amount), 0),
+        timestamp: x.timestamp,
+        from: {
+            short: format_name(x.initiator),
+            full: x.initiator
+        },
+        to: {
+            short: format_name(x.outputs[0]?.address),
+            full: x.outputs[0]?.address,
+        },
+    }});
+    console.log(result);
+    return success_handler(res, result);
 });
 
 app.get("/balance", (req: Request, res: Response) => {
@@ -131,7 +210,7 @@ app.post("/transaction", (req: Request, res: Response, next: NextFunction) => {
         return next(new AppError(400, err.message));
     }
 
-    const block = Block.mine_block(mycoin.blockchain.last(), JSON.stringify(transaction));
+    const block = Block.mine_block(mycoin.blockchain.last(), wallet.public_key, [transaction]);
     err = mycoin.add_blocks(block);
     if (err != null) {
         return next(new AppError(400, err.message));
@@ -141,6 +220,10 @@ app.post("/transaction", (req: Request, res: Response, next: NextFunction) => {
     mycoin.store_chain(BLOCK_CHAIN_FILE);
 
     return success_handler(res, transaction);
+});
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+    next(new AppError(404, "Not found"));
 });
 
 app.use((err: any | AppError, req: Request, res: Response, next: NextFunction) => {

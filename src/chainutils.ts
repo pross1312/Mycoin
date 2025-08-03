@@ -1,8 +1,10 @@
 import crypto, {KeyObject} from 'crypto';
 import fs from "fs";
-const KEY_FORMAT = "pem";
-const PUBLIC_KEY_TYPE = "spki";
+const PRIVATE_KEY_FORMAT = "pem";
 const PRIVATE_KEY_TYPE = "sec1";
+
+const PUBLIC_KEY_FORMAT = "der";
+const PUBLIC_KEY_TYPE = "spki";
 
 export class ChainUtils {
     static new_key_pair() {
@@ -15,7 +17,7 @@ export class ChainUtils {
         const file_content = fs.readFileSync(file_path, 'utf-8');
         return crypto.createPrivateKey({
             key: file_content,
-            format: KEY_FORMAT,
+            format: PRIVATE_KEY_FORMAT,
             type: PRIVATE_KEY_TYPE
         });
     }
@@ -23,7 +25,7 @@ export class ChainUtils {
     static private_key_to_file(private_key: KeyObject, file_path: string) {
         fs.writeFileSync(file_path, private_key.export({
             type: PRIVATE_KEY_TYPE,
-            format: KEY_FORMAT
+            format: PRIVATE_KEY_FORMAT
         }).toString());
         fs.chmodSync(file_path, 0o600);
     }
@@ -39,7 +41,7 @@ export class ChainUtils {
     static public_key_to_hex(public_key: KeyObject): string {
         return Buffer.from(public_key.export({
             type: PUBLIC_KEY_TYPE,
-            format: KEY_FORMAT
+            format: PUBLIC_KEY_FORMAT
         })).toString('base64');
     }
 
@@ -47,7 +49,7 @@ export class ChainUtils {
         return crypto.createPublicKey({
             key: key_hex,
             type: PUBLIC_KEY_TYPE,
-            format: KEY_FORMAT,
+            format: PUBLIC_KEY_FORMAT,
             encoding: "base64"
         });
     }

@@ -7,12 +7,6 @@ export class BlockChain {
         this.chain = [Block.genesis()];
     }
 
-    mine(data: string): Block {
-        const block = Block.mine_block(this.chain[this.chain.length - 1], data);
-        this.chain.push(block);
-        return block;
-    }
-
     append(...blocks: Array<Block>) {
         for (const block of blocks) {
             this.chain.push(block);

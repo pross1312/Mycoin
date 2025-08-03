@@ -17,8 +17,10 @@ interface TransactionOutput {
 
 export interface Transaction {
     id: string;
+    initiator: string;
     inputs: Array<TransactionInput>;
     outputs: Array<TransactionOutput>;
+    timestamp: number;
 }
 
 export class Wallet {
@@ -43,7 +45,9 @@ export class Wallet {
         const id = crypto.randomUUID();
         return {
             id,
+            initiator: "",
             inputs: [],
+            timestamp: Date.now(),
             outputs: [{
                 address: this.public_key,
                 amount
@@ -74,13 +78,15 @@ export class Wallet {
         const inputs = tx_inputs.map(({ txid, index, amount }) => {return {
             txid,
             output_index: index,
-            signature: ChainUtils.sign(`${JSON.stringify(outputs)}${txid}${index}`, this.private_key),
+            signature: ChainUtils.sign(`${this.public_key}${JSON.stringify(outputs)}${txid}${index}`, this.private_key),
         }});
 
         return [{
             id,
+            initiator: this.public_key,
             inputs,
-            outputs
+            outputs,
+            timestamp: Date.now(),
         }, null];
     }
 }
