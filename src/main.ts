@@ -131,12 +131,13 @@ app.post("/transaction", (req: Request, res: Response, next: NextFunction) => {
         return next(new AppError(400, err.message));
     }
 
-    err = mycoin.add_blocks(Block.mine_block(mycoin.blockchain.last(), JSON.stringify(transaction)));
+    const block = Block.mine_block(mycoin.blockchain.last(), JSON.stringify(transaction));
+    err = mycoin.add_blocks(block);
     if (err != null) {
         return next(new AppError(400, err.message));
     }
 
-    p2p_server.broadcast(build_message(MessageType.SYNC, mycoin.blockchain.chain));
+    p2p_server.broadcast(build_message(MessageType.SYNC, [block]));
     mycoin.store_chain(BLOCK_CHAIN_FILE);
 
     return success_handler(res, transaction);
