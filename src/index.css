@@ -35,11 +35,11 @@
     border-color:  var(--color-gray-700);
     box-shadow: 0 0.5rem 1.2rem rgba(82, 85, 92, .15);
   }
-  .card-link {
+  .link {
     color: var(--color-link);
     cursor: pointer;
   }
-  .card-link:hover {
+  .link:hover {
     color: var(--color-link-hover);
   }
 

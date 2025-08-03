@@ -4,16 +4,15 @@ import { AiOutlineTransaction } from "react-icons/ai";
 import { IoCubeOutline } from "react-icons/io5";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatTimestamp, HorizontalSep } from "#/utils";
+import { mapLinkIfNeeded, formatTimestamp, HorizontalSep } from "#/utils";
 import Api from "#/api";
 
 const LIST_TYPE = {
-  BLOCK: {label: "Latest Blocks", link: "VIEW ALL BLOCKS"},
-  TRANSACTION: {label: "Latest Transactions", link: "VIEW ALL TRANSACTIONS"}
+  BLOCK: {label: "Latest Blocks", link: "VIEW ALL BLOCKS", idLinkPrefix: "/block"},
+  TRANSACTION: {label: "Latest Transactions", link: "VIEW ALL TRANSACTIONS", idLinkPrefix: "/transaction"}
 };
 
-function LabelListComponent({icon, id, timestamp, content, amount, shouldAddSepBottom}) {
-  console.log(icon, id, timestamp, content, amount)
+function LabelListComponent({idLinkPrefix = "", icon, id, timestamp, content, amount, shouldAddSepBottom}) {
   return (
     <div className="px-3">
       <div className="flex gap-3 py-2 text-xs">
@@ -21,8 +20,8 @@ function LabelListComponent({icon, id, timestamp, content, amount, shouldAddSepB
           <div className="w-fit h-fit text-xl">{icon}</div>
         </div>
         <div className="my-auto">
-          <div className="card-link">{id}</div>
-          <div className="text-card-time-gray text-xs">{formatTimestamp(timestamp)} ago</div>
+          <div>{mapLinkIfNeeded(id, idLinkPrefix, 10)}</div>
+          <div className="text-card-time-gray text-xs">{formatTimestamp(Date.now() - timestamp)} ago</div>
         </div>
         <div className="grow my-auto">
           {content}
@@ -37,7 +36,6 @@ function LabelListComponent({icon, id, timestamp, content, amount, shouldAddSepB
 }
 
 function LabelList({type, icon, data, contentFunc, onLinkClicked}) {
-  console.log(data);
   return (
     <div className="text-white w-[500px] h-[560px] flex flex-col card">
       <div className="text-center w-full p-3 font-bold">
@@ -46,7 +44,7 @@ function LabelList({type, icon, data, contentFunc, onLinkClicked}) {
       <HorizontalSep/>
       <div className="overflow-auto custom-scrollbar grow">
         {
-          data.map((x, i) => <LabelListComponent key={i} icon={icon} id={x.id} timestamp={x.timestamp} content={contentFunc(x)} amount={x.amount} shouldAddSepBottom={i < (data.length-1)}/>)
+          data.map((x, i) => <LabelListComponent idLinkPrefix={type.idLinkPrefix} key={i} icon={icon} id={x.id} timestamp={x.timestamp} content={contentFunc(x)} amount={x.amount} shouldAddSepBottom={i < (data.length-1)}/>)
         }
       </div>
       <HorizontalSep/>
@@ -63,18 +61,18 @@ function LabelList({type, icon, data, contentFunc, onLinkClicked}) {
 function BlockContent({miner, transactionCount, duration}) {
   return (
     <div>
-      Miner <span className="card-link">{miner.name}</span><br/>
-      <span className="card-link">{transactionCount} txns</span>&nbsp;
+      Miner <span className="link">{mapLinkIfNeeded(miner, "/wallet", 10)}</span><br/>
+      <span className="link">{transactionCount} txns</span>&nbsp;
       <span className="text-card-time-gray">in {formatTimestamp(duration)}</span>
     </div>
   );
 }
 
-function TransactionContent({fromAddress, toAddress}) {
+function TransactionContent({from, to}) {
   return (
     <div style={{"textOverflow": "ellipsis"}}>
-      From <span className="card-link">{fromAddress}</span><br/>
-      To <span className="card-link">{toAddress}</span>
+      From {mapLinkIfNeeded(from, "/wallet", 10)}<br/>
+      To {mapLinkIfNeeded(to, "/wallet", 10)}
     </div>
   );
 }
@@ -85,10 +83,22 @@ export default function() {
   const [transactions, setTransactions] = useState([]);
   useEffect(() => {
     Api.getLatestBlocks().then(latestBlocks => {
-      setBlocks(latestBlocks);
+      setBlocks(latestBlocks.map(block => { return {
+        ...block,
+        id: {
+          short: block.id.toString(),
+          full: block.id.toString()
+        }
+      }}));
     }).catch(console.error);
     Api.getLatestTransactions().then(latestTransactions => {
-      setTransactions(latestTransactions);
+      setTransactions(latestTransactions.map(tx => { return {
+        ...tx,
+        id: {
+          short: tx.id,
+          full: tx.id
+        }
+      }}));
     }).catch(console.error);
   }, []);
   return (

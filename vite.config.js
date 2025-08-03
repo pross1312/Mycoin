@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '#', replacement: path.resolve(__dirname, 'src') },
+      { find: 'SERVER_ADDR', replacement: 'http://localhost:9000' },
     ],
   },
 })
