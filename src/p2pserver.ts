@@ -39,7 +39,7 @@ export class P2PServer {
     }
 
     broadcast(message: string) {
-        console.log(`Broadcasting message ${message} to ${this.sockets.length} peers`);
+        console.log(`Broadcasting message to ${this.sockets.length} peers`);
         this.sockets.forEach(socket => {
             socket.send(message);
         });
@@ -53,12 +53,11 @@ export class P2PServer {
             this.sockets.splice(this.sockets.indexOf(socket), 1);
         });
         socket.on('close', (...args) => {
-            console.log(args);
+            console.log(`Socket closed`);
             this.sockets.splice(this.sockets.indexOf(socket), 1);
         })
         socket.on('message', data => {
             const message = data.toString('utf-8')
-            console.log(`New message ${message}`);
             const result = this.handler(message);
             if (result != null) {
                 socket.send(result);

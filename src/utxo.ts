@@ -42,7 +42,6 @@ export class UTXOManager {
                 return err;
             }
         }
-        console.log("Update utxo", this.utxo);
         return null;
     }
 

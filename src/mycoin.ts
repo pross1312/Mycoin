@@ -65,6 +65,7 @@ export class MyCoin {
 
     store_chain(storage_file_path: string) {
         fs.writeFileSync(storage_file_path, JSON.stringify(this.blockchain.chain), 'utf-8');
+        console.log(`Data stored`);
     }
 
     load_chain(storage_file_path: string): boolean {

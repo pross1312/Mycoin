@@ -62,6 +62,7 @@ const p2p_server = new P2PServer((message: string): string | null => {
     try {
         const parsed_message = JSON.parse(message);
         const type = parsed_message["type"];
+        console.log(`New ${type} message`);
         if (!(type in MessageType)) {
             throw new Error(`Unknown type ${type}`);
         }
@@ -74,12 +75,11 @@ const p2p_server = new P2PServer((message: string): string | null => {
 
 p2p_server.listen();
 p2p_server.connect_to_peers().then(sockets => {
-    if (mycoin.blockchain.chain.length === 1 && sockets.length === 0) {
+    if (sockets.length === 0 && !mycoin.load_chain(BLOCK_CHAIN_FILE)) {
         mycoin.add_blocks(Block.mine_block(mycoin.blockchain.last(), JSON.stringify(wallet.new_coin_base_transaction(100))));
         mycoin.store_chain(BLOCK_CHAIN_FILE);
         return;
-    }
-    if (mycoin.blockchain.chain.length === 1) {
+    } else if (sockets.length !== 0) {
         p2p_server.broadcast(build_message(MessageType.ASK, null));
     }
 }).catch(console.error);
@@ -121,7 +121,7 @@ app.get("/balance", (req: Request, res: Response) => {
 
 app.post("/transaction", (req: Request, res: Response, next: NextFunction) => {
     const {recipient, amount} = req.body;
-    console.log(recipient, amount);
+    console.log(`New transaction ${recipient.substr(0, 32)} amount ${amount}`);
     if (isNaN(Number(amount))) {
         return next(new AppError(400, "Invalid 'amount'"));
     }
