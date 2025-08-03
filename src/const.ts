@@ -1,5 +1,5 @@
-export const KEY_FILE = "./key_file.pem";
-export const BLOCK_CHAIN_FILE = "./block_chain.json";
+export const KEY_FILE = process.env.KEY_FILE || "./key_file.pem";
+export const BLOCK_CHAIN_FILE = process.env.DATA_FILE || "./block_chain.json";
 export const DIFFICULTY = 4;
 export const HTTP_PORT = process.env.PORT || 9999;
 export const P2P_PORT = Number(process.env.P2P_PORT || 10000);

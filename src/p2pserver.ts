@@ -1,7 +1,7 @@
 import {PEERS, P2P_PORT} from "./const";
 import {WebSocket, WebSocketServer} from "ws";
 
-export type MessageHandler = (message: string) => void;
+export type MessageHandler = (message: string) => string | null;
 
 export class P2PServer {
     sockets: Array<WebSocket>;
@@ -21,21 +21,21 @@ export class P2PServer {
         console.log(`P2P server started on ${P2P_PORT}`);
     }
 
-    async connect_to_peers() {
+    async connect_to_peers(): Promise<Array<WebSocket>> {
         const promises = PEERS.map(peer => {
             const socket = new WebSocket(peer)
-            return new Promise<void>((resolve, reject) => {
+            return new Promise<WebSocket | null>((resolve, reject) => {
                 socket.on('error', (...err) => {
                     console.error(err);
-                    resolve();
+                    resolve(null);
                 });
                 socket.on('open', () => {
                     this.new_connection(socket)
-                    resolve();
+                    resolve(socket);
                 });
             });
         });
-        await Promise.all(promises);
+        return (await Promise.all(promises)).filter(x => x !== null);
     }
 
     broadcast(message: string) {
@@ -59,7 +59,10 @@ export class P2PServer {
         socket.on('message', data => {
             const message = data.toString('utf-8')
             console.log(`New message ${message}`);
-            this.handler(message);
+            const result = this.handler(message);
+            if (result != null) {
+                socket.send(result);
+            }
         })
         console.log(`Socket connected`);
     }

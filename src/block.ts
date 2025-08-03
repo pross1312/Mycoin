@@ -32,7 +32,6 @@ export class Block {
         const timestamp = Date.now();
         let nounce = 0;
         const prefix = "0".repeat(DIFFICULTY);
-        console.log(prefix);
         let hash: string;
         do {
             nounce++;

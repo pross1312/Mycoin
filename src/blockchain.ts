@@ -7,10 +7,20 @@ export class BlockChain {
         this.chain = [Block.genesis()];
     }
 
-    append(data: string): Block {
+    mine(data: string): Block {
         const block = Block.mine_block(this.chain[this.chain.length - 1], data);
         this.chain.push(block);
         return block;
+    }
+
+    append(...blocks: Array<Block>) {
+        for (const block of blocks) {
+            this.chain.push(block);
+        }
+    }
+
+    last(): Block {
+        return this.chain[this.chain.length - 1];
     }
 
     replace_if_needed(chain: Array<Block>) {
@@ -21,9 +31,10 @@ export class BlockChain {
         return false;
     }
 
-    static is_valid_chain(chain: Array<Block>) {
-        if (!Block.genesis().equal(chain[0])) return false;
-
+    static is_valid_chain(chain: Array<Block>): boolean {
+        if (chain.length === 1) {
+            return true;
+        }
         const prefix = "0".repeat(DIFFICULTY);
         for (let i = 1; i < chain.length; i++) {
             const block = chain[i];
