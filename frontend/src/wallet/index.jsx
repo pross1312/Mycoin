@@ -1,34 +1,42 @@
 import {useEffect, useState} from "react";
+import {useLocation} from "react-router-dom";
 import { GiWallet } from "react-icons/gi";
 import {capitalize, toHex} from "#/utils";
 import Api from "#/api";
 import {Table} from "#/components/table";
+import Clipboard from "#/components/clipboard";
+
+const LIMIT = 8;
 
 export default function() {
-  const labels = ["Id", "Initiator", "Timestamp", "Amount"];
+  const labels = ["Id", "Initiator", "Timestamp", "Receiver", "Amount"];
+
   const [transactionsData, setTransactionsData] = useState({
     pagination: {},
     data: []
   });
-  const walletAddress = "MFIwEAYHKoZIzj0CAQYFK4EEAAMDPgAETaPdLpHhHB0F%2BVLpExID9o3030YH9tG%2F2et%2Fl3kpCcLmmipN122ZnFeai7n%2FAe3Ec4sNy9dP0Rzrv9BJ";
-  useEffect(() => {
-    Api.getWalletTransactions(walletAddress).then(result => {
+  const getTransactions = (page = 1) => {
+    Api.getWalletTransactions(walletAddress, page, LIMIT).then(result => {
       result.data = capitalize(result.data);
       setTransactionsData(result);
     }).catch(console.error);
-  }, []);
+  }
+  const walletAddress = useLocation().pathname.substr("/wallet/".length);
+  useEffect(() => {
+    getTransactions()
+  }, [walletAddress]);
 
   return (
     <div className="h-full w-full flex flex-col items-center justify-center text-white overflow-hidden gap-4 p-6">
       {/* Wallet Info Header */}
-      <div className="flex items-center w-3/4 text-lg font-medium bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 shadow-md">
-        <div className="text-yellow-400 text-xl mr-2">
+      <div className="flex items-center w-3/4 text-lg font-medium bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 shadow-md gap-2">
+        <div className="text-yellow-400 text-xl">
           <GiWallet />
         </div>
-        <span className="text-gray-300">
-          Wallet of{" "}
-          <strong className="text-white font-mono">{toHex(walletAddress)}</strong>
-        </span>
+        <div className="text-gray-300 text-nowrap my-auto">
+          Wallet of&nbsp;<strong className="text-white font-mono">{toHex(walletAddress)}</strong>
+        </div>
+        <Clipboard text={walletAddress}/>
       </div>
 
       {/* Transactions Table */}
@@ -38,6 +46,7 @@ export default function() {
           data={transactionsData.data}
           pagination={transactionsData.pagination}
           name="transactions"
+          onPaginationClick={page => getTransactions(page)}
           linkHandler={(label) => "/wallet"}
         />
       </div>

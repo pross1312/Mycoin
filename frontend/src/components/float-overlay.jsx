@@ -4,12 +4,11 @@ export default function({children, hidden = false, onClick, onEscape = onClick})
     if (e.code === 'Escape' && onEscape) {
       e.preventDefault();
       e.stopPropagation();
-      onEscape();
+      if (onEscape) onEscape();
     }
   }
   const handleClick = (e) => {
-    if (e.target.id === ID) {
-      // console.log(e); 
+    if (e.target.id === ID && e.button === 0 && e.buttons === 1) {
       e.preventDefault();
       e.stopPropagation();
       if (onClick) onClick();

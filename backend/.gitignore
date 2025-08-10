@@ -1,5 +1,6 @@
 dist/
 node_modules/
+public/
 tsconfig.tsbuild
 .env
 *.pem

@@ -68,15 +68,16 @@ const p2p_server = new P2PServer((message: string): string | null => {
         }
         return message_handler.get(type as MessageType)!(parsed_message["data"]);
     } catch(err) {
-        console.error(`Invalid message ${message}, error: ${err}`);
+        console.error(`Invalid message ${message.toString().substr(0, 100)}, error: ${err}`);
     }
     return null;
 });
 
 p2p_server.listen();
-p2p_server.connect_to_peers().then(sockets => {
+p2p_server.connect_to_peers().then(async sockets => {
     if (sockets.length === 0 && !mycoin.load_chain(BLOCK_CHAIN_FILE)) {
-        mycoin.add_blocks(Block.mine_block(mycoin.blockchain.last(), wallet.public_key, [wallet.new_coin_base_transaction(100)]));
+        const block = await Block.mine_block(mycoin.blockchain.last(), wallet.public_key, [wallet.new_coin_base_transaction(100)])
+        mycoin.add_blocks(block);
         mycoin.store_chain(BLOCK_CHAIN_FILE);
         return;
     } else if (sockets.length !== 0) {
@@ -102,9 +103,15 @@ const success_handler = (res: Response, data: any, status_code: number = 200) =>
     });
 }
 
-const format_name = (public_key: string): string => {
-    if (public_key.length === 0) return '';
-    return `0x${Buffer.from(public_key, 'utf-8').toString('hex').substr(0, 16)}`;
+const format_name = (data: string): {short: string, full: string} => {
+    if (data.length === 0) return {
+        short: '',
+        full: '',
+    };
+    return {
+        short: `0x${Buffer.from(data, 'utf-8').toString('hex').substr(0, 16)}`,
+        full: data,
+    }
 }
 
 const app = express();
@@ -112,7 +119,7 @@ app.use(express.json());
 app.use(express.raw({type: '*/*'}));
 
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (req.method === "OPTIONS") {
@@ -143,43 +150,50 @@ function paginate<T>(items: T[], page: number, limit: number) {
     };
 }
 
-app.get("/blocks", (req: Request, res: Response) => {
+app.use("/", express.static("public"));
+
+app.get("/api/blocks", (req: Request, res: Response) => {
     const page = Number(req.query.page as string) || 1;
     const limit = Number(req.query.limit as string) || 10;
-    console.log(page, limit);
 
-    const blocks = mycoin.blockchain.chain.slice(1) // skip genesis
-        .map((block, i) => ({
-            Block: i + 1,
-            Age: block.timestamp,
-            Txn: block.data.length,
-            Miner: {
-                short: format_name(block.miner),
-                full: block.miner
-            },
-            Reward: 0.12
-        }));
+    const blocks = mycoin.blockchain.chain.slice(1).map((block, i) => ({
+        block: i + 1,
+        age: block.timestamp,
+        txn: block.data.length,
+        miner: format_name(block.miner),
+        reward: 0.12
+    })).reverse();
 
     return success_handler(res, paginate(blocks, page, limit));
 });
 
-app.get("/wallet", (req: Request, res: Response) => {
+app.get("/api/transactions", (req: Request, res: Response) => {
+    const page = Number(req.query.page as string) || 1;
+    const limit = Number(req.query.limit as string) || 10;
+
+    return success_handler(res, paginate(mycoin.blockchain.chain.slice(1).flatMap(block => block.data).map(({id, timestamp, initiator, outputs}: Transaction) => ({
+        id,
+        initiator: format_name(initiator),
+        receiver: format_name(outputs.find(txout => txout.address !== initiator)?.address || ""),
+        timestamp,
+        amount: outputs.reduce((acc: number, output) => (output.address !== initiator ? acc + output.amount : acc), 0)
+    })).sort((a, b) => b.timestamp - a.timestamp), page, limit));
+});
+
+app.get("/api/wallet", (req: Request, res: Response) => {
     let {address} = req.query;
     if (!address) {
         address = wallet.public_key;
     }
 
     success_handler(res, {
-        address: {
-            short: format_name(address as string),
-            full: address
-        },
+        address: format_name(address as string),
         balance: mycoin.utxo_manager.get_balance(address as string)
     });
 });
 
 
-app.get("/transaction/wallet/:address", (req: Request, res: Response, next: NextFunction) => {
+app.get("/api/transaction/wallet/:address", (req: Request, res: Response, next: NextFunction) => {
     const page = Number(req.query.page as string) || 1;
     const limit = Number(req.query.limit as string) || 10;
 
@@ -193,16 +207,14 @@ app.get("/transaction/wallet/:address", (req: Request, res: Response, next: Next
     }
     return success_handler(res, paginate(transactions.map(({id, timestamp, initiator, outputs}) => ({
         id,
-        initiator: {
-            short: format_name(initiator),
-            full: initiator
-        },
+        initiator: format_name(initiator),
+        receiver: format_name(outputs.find(txout => txout.address !== initiator)?.address || ""),
         timestamp,
-        amount: outputs.reduce((acc: number, output) => ((initiator !== address || output.address !== address) ? acc + output.amount : acc), 0)
-    })), page, limit));
+        amount: outputs.reduce((acc: number, output) => (output.address !== initiator ? acc + output.amount : acc), 0)
+    })).sort((a, b) => b.timestamp - a.timestamp), page, limit));
 });
 
-app.get("/latest-block", (req: Request, res: Response) => {
+app.get("/api/latest-block", (req: Request, res: Response) => {
     const {length: _length} = req.query;
     let length = Number(_length);
     if (isNaN(length) || length === 0) length = 5;
@@ -211,10 +223,7 @@ app.get("/latest-block", (req: Request, res: Response) => {
         id: i++,
         timestamp: x.timestamp,
         amount: x.data.reduce((acc: any, x: any) => acc + x.outputs.reduce((sum: any, txo: any) => txo.amount + sum, 0), 0),
-        miner: {
-            short: format_name(x.miner),
-            full: x.miner,
-        },
+        miner: format_name(x.miner),
         transactionCount: x.data.length,
         duration: x.duration,
     })).reverse();
@@ -222,12 +231,12 @@ app.get("/latest-block", (req: Request, res: Response) => {
     return success_handler(res, result);
 });
 
-app.get("/latest-transaction", (req: Request, res: Response) => {
+app.get("/api/latest-transaction", (req: Request, res: Response) => {
     const {length: _length} = req.query;
     let length = Number(_length);
     if (isNaN(length) || length === 0) length = 5;
 
-    let result: any = [];
+    let result: Array<Transaction> = [];
     for (let i = mycoin.blockchain.chain.length - 1; length > 0 && i >= 1; i--) {
         const block = mycoin.blockchain.chain[i];
         const transactions = block.data;
@@ -235,43 +244,44 @@ app.get("/latest-transaction", (req: Request, res: Response) => {
         length -= slice.length;
         result = result.concat(slice);
     }
-    result = result.map((x: any) => ({
+    const response = result.map(x => ({
         id: x.id,
         amount: x.outputs.reduce((acc: any, output: any) => acc + (output.address === x.initiator ? 0 : output.amount), 0),
         timestamp: x.timestamp,
-        from: {
-            short: format_name(x.initiator),
-            full: x.initiator
-        },
-        to: {
-            short: format_name(x.outputs[0]?.address),
-            full: x.outputs[0]?.address,
-        },
+        from: format_name(x.initiator),
+        to: format_name(x.outputs.find(txout => txout.address !== x.initiator)?.address || ""),
     }));
-    console.log(result);
-    return success_handler(res, result);
+    console.log(response);
+    return success_handler(res, response);
 });
 
-app.post("/transaction", (req: Request, res: Response, next: NextFunction) => {
-    const {recipient, amount} = req.body;
-    console.log(`New transaction ${recipient.substr(0, 32)} amount ${amount}`);
+app.post("/api/transaction", (req: Request, res: Response, next: NextFunction) => {
+    const amount = Number(req.body.amount);
     if (isNaN(Number(amount))) {
         return next(new AppError(400, "Invalid 'amount'"));
     }
+
+    const recipient = req.body.recipient as string;
+    if (!recipient) {
+        return next(new AppError(400, "No 'recipient' provided"));
+    }
+
+    console.log(`New transaction ${format_name(recipient)} amount ${amount}`);
 
     let [transaction, err] = wallet.new_transaction(mycoin.utxo_manager, recipient, amount);
     if (err != null) {
         return next(new AppError(400, err.message));
     }
 
-    const block = Block.mine_block(mycoin.blockchain.last(), wallet.public_key, [transaction]);
-    err = mycoin.add_blocks(block);
-    if (err != null) {
-        return next(new AppError(400, err.message));
-    }
-
-    p2p_server.broadcast(build_message(MessageType.SYNC, [block]));
-    mycoin.store_chain(BLOCK_CHAIN_FILE);
+    Block.mine_block(mycoin.blockchain.last(), wallet.public_key, [transaction]).then(block => {
+        const err = mycoin.add_blocks(block);
+        if (err != null) {
+            console.log(err);
+            return;
+        }
+        p2p_server.broadcast(build_message(MessageType.SYNC, [block]));
+        mycoin.store_chain(BLOCK_CHAIN_FILE);
+    }).catch(console.error);
 
     return success_handler(res, transaction);
 });

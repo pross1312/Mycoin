@@ -23,7 +23,7 @@ export class MyCoin {
             if (transactions === null) {
                 continue;
             }
-            const err = this.utxo_manager.update(transactions);
+            const err = this.utxo_manager.update(...transactions);
             if (err !== null) {
                 return err;
             }

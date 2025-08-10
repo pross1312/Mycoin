@@ -31,19 +31,21 @@ export class Block {
         return new this(0, "-----", "fir57-h45h", [], 0, 0, "");
     }
 
-    static mine_block(last_block: Block, miner: string, data: any): Block {
-        const last_hash = last_block.hash;
-        const timestamp = Date.now();
-        let nounce = 0;
-        const prefix = "0".repeat(DIFFICULTY);
-        let hash: string;
-        const data_str = JSON.stringify(data);
-        do {
-            nounce++;
-            hash = Block.hash(timestamp, last_hash, data_str, nounce, miner);
-        } while (!hash.startsWith(prefix))
-        const duration = Date.now() - timestamp;
-        return new this(timestamp, last_hash, hash, data, nounce, duration, miner);
+    static mine_block(last_block: Block, miner: string, data: any): Promise<Block> {
+        return new Promise<Block>((resolve, reject) => {
+            const last_hash = last_block.hash;
+            const timestamp = Date.now();
+            let nounce = 0;
+            const prefix = "0".repeat(DIFFICULTY);
+            let hash: string;
+            const data_str = JSON.stringify(data);
+            do {
+                nounce++;
+                hash = Block.hash(timestamp, last_hash, data_str, nounce, miner);
+            } while (!hash.startsWith(prefix))
+            const duration = Date.now() - timestamp;
+            resolve(new this(timestamp, last_hash, hash, data, nounce, duration, miner));
+        });
     }
 
     static hash(timestamp: number, last_hash: string, data_str: string, nounce: number, miner: string): string {

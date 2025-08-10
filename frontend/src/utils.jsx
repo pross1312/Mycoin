@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import {Link} from "react-router-dom";
+import {toast} from "react-toastify";
 
 export function mapLinkIfNeeded(obj, prefix = "", maxLength = 100000) {
   if (typeof obj === "object" && "short" in obj) {
@@ -9,10 +10,6 @@ export function mapLinkIfNeeded(obj, prefix = "", maxLength = 100000) {
       shortForm.length > maxLength
       ? shortForm.slice(0, maxLength) + "..."
       : shortForm;
-    if (maxLength === 9999) {
-      console.log(shortForm);
-      console.log(displayText);
-    }
 
     return (
       <Link to={path} className="link">
@@ -21,6 +18,10 @@ export function mapLinkIfNeeded(obj, prefix = "", maxLength = 100000) {
     );
   }
   return <span>{obj}</span>;
+}
+
+export function getFullLink(obj) {
+  return obj?.full || "";
 }
 
 export function formatTimestamp(timestamp) {
@@ -67,7 +68,9 @@ export function capitalize(data) {
   }
   if (typeof data === "object") {
     for (const [key, value] of Object.entries(data)) {
-      data[capitalize(key)] = value;
+      const newKey = capitalize(key);
+      if (newKey === key) continue;
+      data[newKey] = value;
       delete data[key];
     }
     return data;
@@ -88,4 +91,13 @@ String.prototype.hexEncode = function(){
 export function toHex(data) {
   if (data.length === 0) return '';
   return `0x${data.hexEncode().substr(0, 16)}`;
+}
+
+export function displaySuccess(message) {
+  console.log(message);
+  toast.success(message);
+}
+
+export function displayError(message) {
+  toast.error(message);
 }
