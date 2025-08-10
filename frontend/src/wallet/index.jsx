@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {useLocation} from "react-router-dom";
 import { GiWallet } from "react-icons/gi";
-import {capitalize, toHex} from "#/utils";
+import {capitalize, getLink, getFullLink, getShortLink} from "#/utils";
 import Api from "#/api";
 import {Table} from "#/components/table";
 import Clipboard from "#/components/clipboard";
@@ -15,13 +15,15 @@ export default function() {
     pagination: {},
     data: []
   });
+  const walletAddress = getLink();
+
   const getTransactions = (page = 1) => {
-    Api.getWalletTransactions(walletAddress, page, LIMIT).then(result => {
+    Api.getWalletTransactions(getFullLink(walletAddress), page, LIMIT).then(result => {
       result.data = capitalize(result.data);
       setTransactionsData(result);
     }).catch(console.error);
   }
-  const walletAddress = useLocation().pathname.substr("/wallet/".length);
+
   useEffect(() => {
     getTransactions()
   }, [walletAddress]);
@@ -34,7 +36,7 @@ export default function() {
           <GiWallet />
         </div>
         <div className="text-gray-300 text-nowrap my-auto">
-          Wallet of&nbsp;<strong className="text-white font-mono">{toHex(walletAddress)}</strong>
+          Wallet of&nbsp;<strong className="text-white font-mono">{getShortLink(walletAddress)}</strong>
         </div>
         <Clipboard text={walletAddress}/>
       </div>

@@ -39,10 +39,11 @@ export class ChainUtils {
     }
 
     static public_key_to_hex(public_key: KeyObject): string {
-        return Buffer.from(public_key.export({
+        const exported = public_key.export({
             type: PUBLIC_KEY_TYPE,
             format: PUBLIC_KEY_FORMAT
-        })).toString('base64');
+        });
+        return exported.toString('base64');
     }
 
     static hex_to_public_key(key_hex: string): KeyObject {

@@ -1,9 +1,10 @@
-import {Link} from "react-router-dom";
+import {Link, useLocation} from "react-router-dom";
 import {toast} from "react-toastify";
 
 export function mapLinkIfNeeded(obj, prefix = "", maxLength = 100000) {
   if (typeof obj === "object" && "short" in obj) {
-    const path = `${prefix}/${encodeURIComponent(obj.full)}`;
+    const params = new URLSearchParams(obj);
+    const path = `${prefix}?${params.toString()}`;
     prefix = prefix || "";
     const shortForm = obj["short"];
     const displayText =
@@ -20,8 +21,20 @@ export function mapLinkIfNeeded(obj, prefix = "", maxLength = 100000) {
   return <span>{obj}</span>;
 }
 
+export function getLink() {
+  const params = new URLSearchParams(useLocation().search);
+  return {
+    short: params.get("short"),
+    full: params.get("full"),
+  }
+}
+
 export function getFullLink(obj) {
   return obj?.full || "";
+}
+
+export function getShortLink(obj) {
+  return obj?.short || "";
 }
 
 export function formatTimestamp(timestamp) {
@@ -75,22 +88,6 @@ export function capitalize(data) {
     }
     return data;
   }
-}
-
-String.prototype.hexEncode = function(){
-  var hex, i;
-
-  var result = "";
-  for (i=0; i<this.length; i++) {
-    result += this.charCodeAt(i).toString(16);
-  }
-
-  return result
-}
-
-export function toHex(data) {
-  if (data.length === 0) return '';
-  return `0x${data.hexEncode().substr(0, 16)}`;
 }
 
 export function displaySuccess(message) {

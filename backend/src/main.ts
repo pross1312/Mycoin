@@ -103,13 +103,13 @@ const success_handler = (res: Response, data: any, status_code: number = 200) =>
     });
 }
 
-const format_name = (data: string): {short: string, full: string} => {
+const format_address = (data: string): {short: string, full: string} => {
     if (data.length === 0) return {
         short: '',
         full: '',
     };
     return {
-        short: `0x${Buffer.from(data, 'utf-8').toString('hex').substr(0, 16)}`,
+        short: `0x${Buffer.from(data, 'utf-8').subarray(35).toString('hex').substr(0, 16)}`,
         full: data,
     }
 }
@@ -160,7 +160,7 @@ app.get("/api/blocks", (req: Request, res: Response) => {
         block: i + 1,
         age: block.timestamp,
         txn: block.data.length,
-        miner: format_name(block.miner),
+        miner: format_address(block.miner),
         reward: 0.12
     })).reverse();
 
@@ -173,8 +173,8 @@ app.get("/api/transactions", (req: Request, res: Response) => {
 
     return success_handler(res, paginate(mycoin.blockchain.chain.slice(1).flatMap(block => block.data).map(({id, timestamp, initiator, outputs}: Transaction) => ({
         id,
-        initiator: format_name(initiator),
-        receiver: format_name(outputs.find(txout => txout.address !== initiator)?.address || ""),
+        initiator: format_address(initiator),
+        receiver: format_address(outputs.find(txout => txout.address !== initiator)?.address || ""),
         timestamp,
         amount: outputs.reduce((acc: number, output) => (output.address !== initiator ? acc + output.amount : acc), 0)
     })).sort((a, b) => b.timestamp - a.timestamp), page, limit));
@@ -187,7 +187,7 @@ app.get("/api/wallet", (req: Request, res: Response) => {
     }
 
     success_handler(res, {
-        address: format_name(address as string),
+        address: format_address(address as string),
         balance: mycoin.utxo_manager.get_balance(address as string)
     });
 });
@@ -207,8 +207,8 @@ app.get("/api/transaction/wallet/:address", (req: Request, res: Response, next: 
     }
     return success_handler(res, paginate(transactions.map(({id, timestamp, initiator, outputs}) => ({
         id,
-        initiator: format_name(initiator),
-        receiver: format_name(outputs.find(txout => txout.address !== initiator)?.address || ""),
+        initiator: format_address(initiator),
+        receiver: format_address(outputs.find(txout => txout.address !== initiator)?.address || ""),
         timestamp,
         amount: outputs.reduce((acc: number, output) => (output.address !== initiator ? acc + output.amount : acc), 0)
     })).sort((a, b) => b.timestamp - a.timestamp), page, limit));
@@ -223,7 +223,7 @@ app.get("/api/latest-block", (req: Request, res: Response) => {
         id: i++,
         timestamp: x.timestamp,
         amount: x.data.reduce((acc: any, x: any) => acc + x.outputs.reduce((sum: any, txo: any) => txo.amount + sum, 0), 0),
-        miner: format_name(x.miner),
+        miner: format_address(x.miner),
         transactionCount: x.data.length,
         duration: x.duration,
     })).reverse();
@@ -248,8 +248,8 @@ app.get("/api/latest-transaction", (req: Request, res: Response) => {
         id: x.id,
         amount: x.outputs.reduce((acc: any, output: any) => acc + (output.address === x.initiator ? 0 : output.amount), 0),
         timestamp: x.timestamp,
-        from: format_name(x.initiator),
-        to: format_name(x.outputs.find(txout => txout.address !== x.initiator)?.address || ""),
+        from: format_address(x.initiator),
+        to: format_address(x.outputs.find(txout => txout.address !== x.initiator)?.address || ""),
     }));
     console.log(response);
     return success_handler(res, response);
@@ -266,7 +266,7 @@ app.post("/api/transaction", (req: Request, res: Response, next: NextFunction) =
         return next(new AppError(400, "No 'recipient' provided"));
     }
 
-    console.log(`New transaction ${format_name(recipient)} amount ${amount}`);
+    console.log(`New transaction ${format_address(recipient)} amount ${amount}`);
 
     let [transaction, err] = wallet.new_transaction(mycoin.utxo_manager, recipient, amount);
     if (err != null) {

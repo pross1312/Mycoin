@@ -43,7 +43,7 @@ export default {
   },
 
   getWalletTransactions: async (id, page = 1, limit = 10) => {
-    const [success, code, data] = await apiCall(`/transaction/wallet/${id}`, {
+    const [success, code, data] = await apiCall(`/transaction/wallet/${encodeURIComponent(id)}`, {
       query: { page, limit }
     });
     if (!success) {
