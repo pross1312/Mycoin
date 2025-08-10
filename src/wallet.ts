@@ -4,13 +4,13 @@ import {ChainUtils} from "./chainutils";
 import {KEY_FILE} from "./const";
 import {UTXOManager} from "./utxo";
 
-interface TransactionInput {
+export interface TransactionInput {
     txid: string;
     output_index: number;
     signature: string;
 }
 
-interface TransactionOutput {
+export interface TransactionOutput {
     address: string; // NOTE: public key
     amount: number;
 }

@@ -2,7 +2,7 @@ require("dotenv");
 import express, { Express, Request, Response, NextFunction } from "express";
 import fs from "fs"
 import {Block} from "./block";
-import {Wallet} from "./wallet";
+import {Transaction, TransactionOutput, TransactionInput, Wallet} from "./wallet";
 import {MyCoin} from "./mycoin";
 import {P2PServer, MessageHandler} from "./p2pserver";
 import {PEERS, BLOCK_CHAIN_FILE, HTTP_PORT} from "./const";
@@ -126,17 +126,77 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     return next();
 });
 
+function paginate<T>(items: T[], page: number, limit: number) {
+    const total = items.length;
+    const totalPages = Math.ceil(total / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    return {
+        page,
+        limit,
+        total,
+        totalPages,
+        data: items.slice(startIndex, endIndex)
+    };
+}
+
 app.get("/blocks", (req: Request, res: Response) => {
-    return success_handler(res, mycoin.blockchain.chain.slice(1).map((block, i) => { return {
-        Block: i+1,
-        Age: block.timestamp,
-        Txn: block.data.length,
-        Miner: {
-            short: format_name(block.miner),
-            full: block.miner
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const blocks = mycoin.blockchain.chain.slice(1) // skip genesis
+        .map((block, i) => ({
+            Block: i + 1,
+            Age: block.timestamp,
+            Txn: block.data.length,
+            Miner: {
+                short: format_name(block.miner),
+                full: block.miner
+            },
+            Reward: 0.12
+        }));
+
+    return success_handler(res, paginate(blocks, page, limit));
+});
+
+app.get("/wallet", (req: Request, res: Response) => {
+    let {address} = req.query;
+    if (!address) {
+        address = wallet.public_key;
+    }
+
+    success_handler(res, {
+        address: {
+            short: format_name(address as string),
+            full: address
         },
-        Reward: 0.12,
-    }}));
+        balance: mycoin.utxo_manager.get_balance(address as string)
+    });
+});
+
+
+app.get("/transaction/wallet/:address", (req: Request, res: Response, next: NextFunction) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const {address} = req.params;
+    if (!address) {
+        return next(new AppError(400, "Invalid address"));
+    }
+    let transactions: Array<Transaction> = [];
+    for (const block of mycoin.blockchain.chain) {
+        transactions = transactions.concat(block.data.filter(({initiator, outputs}: Transaction) => initiator === address || outputs.find((output: TransactionOutput) => output.address === address) !== undefined));
+    }
+    return success_handler(res, paginate(transactions.map(({id, timestamp, initiator, outputs}) => ({
+        id,
+        initiator: {
+            short: format_name(initiator),
+            full: initiator
+        },
+        timestamp,
+        amount: outputs.reduce((acc: number, output) => ((initiator !== address || output.address !== address) ? acc + output.amount : acc), 0)
+    })), page, limit));
 });
 
 app.get("/latest-block", (req: Request, res: Response) => {
@@ -144,7 +204,7 @@ app.get("/latest-block", (req: Request, res: Response) => {
     let length = Number(_length);
     if (isNaN(length) || length === 0) length = 5;
     let i = Math.max(1, mycoin.blockchain.chain.length - length + 1);
-    const result = mycoin.blockchain.chain.slice(1).slice(-length!).map(x => { return {
+    const result = mycoin.blockchain.chain.slice(1).slice(-length!).map(x => ({
         id: i++,
         timestamp: x.timestamp,
         amount: x.data.reduce((acc: any, x: any) => acc + x.outputs.reduce((sum: any, txo: any) => txo.amount + sum, 0), 0),
@@ -154,7 +214,7 @@ app.get("/latest-block", (req: Request, res: Response) => {
         },
         transactionCount: x.data.length,
         duration: x.duration,
-    }}).reverse();
+    })).reverse();
     console.log(result);
     return success_handler(res, result);
 });
@@ -172,7 +232,7 @@ app.get("/latest-transaction", (req: Request, res: Response) => {
         length -= slice.length;
         result = result.concat(slice);
     }
-    result = result.map((x: any) => { return {
+    result = result.map((x: any) => ({
         id: x.id,
         amount: x.outputs.reduce((acc: any, output: any) => acc + (output.address === x.initiator ? 0 : output.amount), 0),
         timestamp: x.timestamp,
@@ -184,18 +244,9 @@ app.get("/latest-transaction", (req: Request, res: Response) => {
             short: format_name(x.outputs[0]?.address),
             full: x.outputs[0]?.address,
         },
-    }});
+    }));
     console.log(result);
     return success_handler(res, result);
-});
-
-app.get("/balance", (req: Request, res: Response) => {
-    let {address} = req.query;
-    if (!address) {
-        address = wallet.public_key;
-    }
-
-    success_handler(res, mycoin.utxo_manager.get_balance(address as string));
 });
 
 app.post("/transaction", (req: Request, res: Response, next: NextFunction) => {
