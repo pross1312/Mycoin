@@ -103,7 +103,7 @@ export default function() {
   }, []);
   return (
     <div className="w-full h-full flex justify-center">
-      <div className="my-auto flex w-3/5 max-h-5/6 gap-5">
+      <div className="my-auto flex w-3/5 h-4/6 gap-5">
         <LabelList onLinkClicked={() => navigate("/blocks")} type={LIST_TYPE.BLOCK} data={blocks} icon={<IoCubeOutline/>} contentFunc={BlockContent}/>
         <LabelList onLinkClicked={() => navigate("/transactions")} type={LIST_TYPE.TRANSACTION} data={transactions} icon={<AiOutlineTransaction/>} contentFunc={TransactionContent}/>
       </div>

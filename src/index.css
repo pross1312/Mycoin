@@ -57,11 +57,15 @@
     padding: calc(var(--spacing) * 1.2);
     margin: 0px;
     color: var(--color-link);
+    cursor: normal;
   }
-  .pagination-box:hover {
+  .pagination-box:hover:not(.pagination-box-nohover, .pagination-box-disabled) {
     color: var(--color-link-hover);
+    cursor: pointer;
   }
-  .pagination-box:disabled {
+  .pagination-box-disabled {
+    color: var(--mygray);
+    cursor: normal;
   }
 }
 @theme {
@@ -75,6 +79,7 @@
   --color-card-time-gray: var(--color-gray-500);
   --color-mygray: var(--color-gray-500);
   --color-seperator: var(--color-gray-600);
+  --color-header-gray: var(--color-gray-300);
 
 
   /* --color-bg: var(--color-black); */

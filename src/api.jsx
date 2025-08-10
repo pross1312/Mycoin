@@ -1,4 +1,4 @@
-export const SERVER_ADDR = "http://localhost:9000";
+export const SERVER_ADDR = "http://localhost:9001";
 async function apiCall(path, options) {
   let {method, body, query} = (options || {});
   if (method === undefined) method = "GET";

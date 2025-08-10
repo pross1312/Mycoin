@@ -1,15 +1,17 @@
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import {mapLinkIfNeeded} from "#/utils";
-function Paginator({currentPage, totalPage}) {
+function Paginator({pagination}) {
+  const currentPage = pagination?.page || 0;
+  const totalPage = pagination?.totalPage || 0;
   return (
     <div className="flex justify-between w-fit place-items-center gap-1">
-      <div className={`pagination-box ${currentPage > 1 ? "pagination-box-enabled" : "pagination-box-disabled"}`} disabled={true}>
+      <div className={`pagination-box ${currentPage > 1 ? "pagination-box-enabled" : "pagination-box-disabled"}`}>
         First
       </div>
       <div className={`pagination-box ${currentPage > 1 ? "pagination-box-enabled" : "pagination-box-disabled"}`}>
         <FaArrowLeft/>
       </div>
-      <div className="pagination-box !px-3">
+      <div className="pagination-box pagination-box-nohover !px-3">
         Page {currentPage} of {totalPage}
       </div>
       <div className={`pagination-box ${currentPage < totalPage-1 ? "pagination-box-enabled" : "pagination-box-disabled"}`}>
@@ -22,7 +24,7 @@ function Paginator({currentPage, totalPage}) {
   );
 }
 
-export function Table({labels, data, name, linkHandler}) {
+export function Table({labels, data, name, linkHandler, pagination}) {
   return (
     <div className="card w-full h-full overflow-auto custom-scrollbar">
       <div className="p-3 h-fit flex justify-between sticky top-0 bg-card">
@@ -30,7 +32,7 @@ export function Table({labels, data, name, linkHandler}) {
           Total of {data.length} {name}
         </div>
         <div>
-          <Paginator currentPage={1} totalPage={10}/>
+          <Paginator pagination={pagination}/>
         </div>
       </div>
       <table className="table-auto w-full text-start">
