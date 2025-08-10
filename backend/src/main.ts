@@ -128,22 +128,25 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 function paginate<T>(items: T[], page: number, limit: number) {
     const total = items.length;
-    const totalPages = Math.ceil(total / limit);
+    const totalPage = Math.ceil(total / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
     return {
-        page,
-        limit,
-        total,
-        totalPages,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPage,
+        },
         data: items.slice(startIndex, endIndex)
     };
 }
 
 app.get("/blocks", (req: Request, res: Response) => {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const page = Number(req.query.page as string) || 1;
+    const limit = Number(req.query.limit as string) || 10;
+    console.log(page, limit);
 
     const blocks = mycoin.blockchain.chain.slice(1) // skip genesis
         .map((block, i) => ({
@@ -177,8 +180,8 @@ app.get("/wallet", (req: Request, res: Response) => {
 
 
 app.get("/transaction/wallet/:address", (req: Request, res: Response, next: NextFunction) => {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const page = Number(req.query.page as string) || 1;
+    const limit = Number(req.query.limit as string) || 10;
 
     const {address} = req.params;
     if (!address) {
