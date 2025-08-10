@@ -31,11 +31,31 @@ export default {
     return data;
   },
 
-  getAllBlocks: async () => {
-    const [success, code, data] = await apiCall('/blocks');
+  getAllBlocks: async (page = 1, limit = 10) => {
+    const [success, code, data] = await apiCall("/blocks", {
+      query: { page, limit }
+    });
     if (!success) {
       throw new Error(data);
     }
     return data;
-  }
+  },
+
+  getWalletTransactions: async (id, page = 1, limit = 10) => {
+    const [success, code, data] = await apiCall(`/transaction/wallet/${id}`, {
+      query: { page, limit }
+    });
+    if (!success) {
+      throw new Error(data);
+    }
+    return data;
+  },
+
+  getLocalWallet: async () => {
+    const [success, code, data] = await apiCall('/wallet');
+    if (!success) {
+      throw new Error(data);
+    }
+    return data;
+  },
 }

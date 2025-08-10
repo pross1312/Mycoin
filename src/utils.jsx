@@ -4,19 +4,37 @@ export function mapLinkIfNeeded(obj, prefix = "", maxLength = 100000) {
   if (typeof obj === "object" && "short" in obj) {
     const path = `${prefix}/${encodeURIComponent(obj.full)}`;
     prefix = prefix || "";
-    const short = obj["short"];
+    const shortForm = obj["short"];
+    const displayText =
+      shortForm.length > maxLength
+      ? shortForm.slice(0, maxLength) + "..."
+      : shortForm;
+    if (maxLength === 9999) {
+      console.log(shortForm);
+      console.log(displayText);
+    }
+
     return (
-      <Link to={path} className="link">{short.substr(0, maxLength) + (short.length < maxLength ? "" : "...")}</Link>
+      <Link to={path} className="link">
+      {displayText}
+      </Link>
     );
   }
   return <span>{obj}</span>;
 }
 
 export function formatTimestamp(timestamp) {
-  if (timestamp < 60) return `${timestamp} secs`;
-  if (timestamp < 3600) return `${Math.floor(timestamp / 60)} mins`;
-  if (timestamp < 86400) return `${Math.floor(timestamp / 3600)} hours`;
-  if (timestamp < 604800*360) return `${Math.floor(timestamp / 86400)} days`;
+  const units = [
+    { limit: 60000, div: 1000, label: "secs" },
+    { limit: 3600000, div: 60000, label: "mins" },
+    { limit: 86400000, div: 3600000, label: "hours" },
+    { limit: 86400000 * 360, div: 86400000, label: "days" }
+  ];
+
+  for (const { limit, div, label } of units) {
+    if (timestamp < limit) return `${Math.floor(timestamp / div)} ${label}`;
+  }
+
   return parseMilis(timestamp);
 }
 
@@ -35,4 +53,39 @@ export function HorizontalSep() {
     <div className="w-full bg-seperator-color h-[1px]">
     </div>
   );
+}
+
+export function capitalize(data) {
+  if (data.length === 0) {
+    return data;
+  }
+  if (typeof data === "string" && data.length > 0) {
+    return data[0].toUpperCase() + data.substr(1);
+  }
+  if (Array.isArray(data)) {
+    return data.map(x => capitalize(x));
+  }
+  if (typeof data === "object") {
+    for (const [key, value] of Object.entries(data)) {
+      data[capitalize(key)] = value;
+      delete data[key];
+    }
+    return data;
+  }
+}
+
+String.prototype.hexEncode = function(){
+  var hex, i;
+
+  var result = "";
+  for (i=0; i<this.length; i++) {
+    result += this.charCodeAt(i).toString(16);
+  }
+
+  return result
+}
+
+export function toHex(data) {
+  if (data.length === 0) return '';
+  return `0x${data.hexEncode().substr(0, 16)}`;
 }

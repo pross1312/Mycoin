@@ -37,7 +37,7 @@ function LabelListComponent({idLinkPrefix = "", icon, id, timestamp, content, am
 
 function LabelList({type, icon, data, contentFunc, onLinkClicked}) {
   return (
-    <div className="text-white w-[500px] h-[560px] flex flex-col card">
+    <div className="text-white w-full h-full flex flex-col card">
       <div className="text-center w-full p-3 font-bold">
         {type.label}
       </div>
@@ -102,8 +102,8 @@ export default function() {
     }).catch(console.error);
   }, []);
   return (
-    <div className="w-screen h-screen flex">
-      <div className="my-auto flex w-full h-fit justify-center gap-5">
+    <div className="w-full h-full flex justify-center">
+      <div className="my-auto flex w-3/5 max-h-5/6 gap-5">
         <LabelList onLinkClicked={() => navigate("/blocks")} type={LIST_TYPE.BLOCK} data={blocks} icon={<IoCubeOutline/>} contentFunc={BlockContent}/>
         <LabelList onLinkClicked={() => navigate("/transactions")} type={LIST_TYPE.TRANSACTION} data={transactions} icon={<AiOutlineTransaction/>} contentFunc={TransactionContent}/>
       </div>
