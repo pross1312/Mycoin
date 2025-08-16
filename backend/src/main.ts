@@ -186,7 +186,6 @@ app.get("/api/transactions/block/:id", (req: Request, res: Response, next: NextF
     const block = mycoin.blockchain.chain[id];
     const page = Number(req.query.page as string) || 1;
     const limit = Number(req.query.limit as string) || 10;
-    console.log(page, limit);
 
     if (!block) {
         return next(new AppError(404, "Block not found"));
@@ -240,7 +239,6 @@ app.get("/api/transaction/wallet/:address", (req: Request, res: Response, next: 
 
 app.get("/api/detail/block/:id", (req: Request, res: Response, next: NextFunction) => {
     const id = parseInt(req.params.id, 10);
-    console.log(id, mycoin.blockchain.chain.length);
     const block = mycoin.blockchain.chain[id];
     if (!block) {
         return next(new AppError(404, "Block not found"));
@@ -314,7 +312,6 @@ app.get("/api/latest-transaction", (req: Request, res: Response) => {
         from: format_address(x.initiator),
         to: format_address(x.outputs.find(txout => txout.address !== x.initiator)?.address || ""),
     }));
-    console.log(response);
     return success_handler(res, response);
 });
 

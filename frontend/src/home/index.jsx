@@ -4,7 +4,7 @@ import {AiOutlineTransaction} from "react-icons/ai";
 import {IoCubeOutline} from "react-icons/io5";
 import {useState, useEffect} from "react";
 import {useNavigate} from "react-router-dom";
-import {mapLinkIfNeeded, formatTimestamp, HorizontalSep, formatLink} from "#/utils";
+import {mapLinkIfNeeded, getFullLink, formatTimestamp, HorizontalSep, formatLink, formatCurrency} from "#/utils";
 import Api from "#/api";
 
 const LIST_TYPE = {
@@ -27,7 +27,7 @@ function LabelListComponent({idLinkPrefix = "", icon, id, timestamp, content, am
           {content}
         </div>
         <div className="my-auto border-1 border-gray-600 p-1 text-xs font-bold rounded my-auto">
-          {amount}
+          {formatCurrency(amount)}
         </div>
       </div>
       {shouldAddSepBottom ? <HorizontalSep/> : <></>}
@@ -58,11 +58,11 @@ function LabelList({type, icon, data, contentFunc, onLinkClicked}) {
   );
 }
 
-function BlockContent({miner, transactionCount, duration}) {
+function BlockContent({id, miner, transactionCount, duration}) {
   return (
     <div>
       Miner <span className="link">{mapLinkIfNeeded(miner, "/wallet", 10)}</span><br/>
-      <span className="link">{transactionCount} txns</span>&nbsp;
+      <span>{mapLinkIfNeeded(formatLink(transactionCount.toString() + " txns", getFullLink(id)), "/transactions")}</span>&nbsp;
       <span className="text-card-time-gray">in {formatTimestamp(duration)}</span>
     </div>
   );

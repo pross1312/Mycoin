@@ -1,6 +1,6 @@
 import {useEffect, useState, useRef} from "react"
 import {useNavigate} from "react-router-dom";
-import {mapLinkIfNeeded, displayError, getFullLink, displaySuccess} from "#/utils";
+import {mapLinkIfNeeded, displayError, getFullLink, displaySuccess, formatCurrency} from "#/utils";
 import {AiOutlineTransaction} from "react-icons/ai";
 import {FaCoins, FaKey, FaWallet, FaPaperPlane} from "react-icons/fa";
 import Api from "#/api";
@@ -59,13 +59,13 @@ export default function() {
   const [overlayVisible, setOverlayVisisble] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
-    Api.getLocalWallet().then(data => {
+    Api.getWalletInfo().then(data => {
       walletInfoRef.current = data;
       setWalletInfo(walletInfoRef.current);
     }).catch(console.error);
 
     const id = setInterval(() => {
-      Api.getLocalWallet().then(data => {
+      Api.getWalletInfo().then(data => {
         if (data.balance !== walletInfoRef.current.balance || data.address.full !== walletInfoRef.current.address.full || data.address.short !== walletInfoRef.current.address.short) {
           walletInfoRef.current = data;
           setWalletInfo(walletInfoRef.current);
@@ -99,7 +99,7 @@ export default function() {
         <div className="px-3 py-1 header-box flex items-center gap-1">
           <FaWallet className="text-green-400" />
           <span className="text-header-gray">Balance:</span>&nbsp;
-          <span className="font-semibold">{walletInfo.balance}</span>
+          <span className="font-semibold">{formatCurrency(walletInfo.balance || 0)}</span>
         </div>
         <button className="px-3 py-1 header-box flex items-center gap-1 hover:bg-gray-700 cursor-pointer"
                 onClick={() => setOverlayVisisble(true)}>

@@ -52,8 +52,12 @@ export default {
     return data;
   },
 
-  getLocalWallet: async () => {
-    const [success, code, data] = await apiCall('/wallet');
+  getWalletInfo: async (address) => {
+    let query = {};
+    if (address) {
+      query = {address};
+    }
+    const [success, code, data] = await apiCall('/wallet', {query});
     if (!success) {
       throw data;
     }

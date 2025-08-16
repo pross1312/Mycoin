@@ -1,5 +1,14 @@
 import {Link, useLocation} from "react-router-dom";
+import {FaCoins} from "react-icons/fa";  
 import {toast} from "react-toastify";
+
+export function formatCurrency(amount) {
+  return (
+    <span className="font-semibold flex items-center gap-1 w-fit">
+      {amount.toLocaleString()} <FaCoins />
+    </span>
+  );
+}
 
 export function formatLink(short_form, full = short_form) {
   return {

@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {useLocation} from "react-router-dom";
-import {formatLink, formatTimestamp, mapLinkIfNeeded, getLink, getShortLink, getFullLink} from "#/utils";
+import {formatCurrency, formatLink, formatTimestamp, mapLinkIfNeeded, getLink, getShortLink, getFullLink} from "#/utils";
 import Api from "#/api"
 
 function Detail({block, transaction}) {
@@ -29,7 +29,7 @@ function Detail({block, transaction}) {
           <div><span className="text-gray-400">Block:</span> {mapLinkIfNeeded(transaction.block, "/detail/block")}</div>
           <div><span className="text-gray-400">From:</span> {mapLinkIfNeeded(transaction.from, "/wallet")}</div>
           <div><span className="text-gray-400">To:</span> {mapLinkIfNeeded(transaction.to, "/wallet")}</div>
-          <div><span className="text-gray-400">Amount:</span> {transaction.amount}</div>
+          <div className="flex"><span className="text-gray-400">Amount:</span>&nbsp;{formatCurrency(transaction.amount || 0)}</div>
           <div><span className="text-gray-400">Timestamp:</span> {formatTimestamp(transaction.timestamp)}</div>
         </div>
       </div>

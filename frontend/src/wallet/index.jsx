@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {useLocation} from "react-router-dom";
 import { GiWallet } from "react-icons/gi";
-import {capitalize, getLink, getFullLink, getShortLink, formatLink} from "#/utils";
+import {capitalize, getLink, getFullLink, getShortLink, formatLink, formatCurrency} from "#/utils";
 import Api from "#/api";
 import {Table} from "#/components/table";
 import Clipboard from "#/components/clipboard";
@@ -11,6 +11,7 @@ const LIMIT = 8;
 export default function() {
   const labels = ["Id", "Initiator", "Timestamp", "Receiver", "Amount"];
 
+  const [walletInfo, setWalletInfo] = useState({});
   const [transactionsData, setTransactionsData] = useState({
     pagination: {},
     data: []
@@ -18,19 +19,32 @@ export default function() {
   const walletAddress = getLink();
 
   const getTransactions = (page = 1) => {
+    Api.getWalletInfo(getFullLink(walletAddress)).then(result => {
+      setWalletInfo(result);
+    }).catch(console.error);
     Api.getWalletTransactions(getFullLink(walletAddress), page, LIMIT).then(result => {
-      result.data = capitalize(result.data.map(x => ({...x, id: formatLink(x.id)})));
+      result.data = capitalize(result.data.map(x => {
+        const isReceived = getFullLink(x.initiator) !== getFullLink(walletAddress);
+        return {
+          ...x,
+          amount: (
+            <span className={isReceived ?  "text-green-400" : "text-red-400"}>
+              {formatCurrency((isReceived ? "+ " : "- ") + x.amount.toString())}
+            </span>
+          ),
+          id: formatLink(x.id)
+        }
+      }));
       setTransactionsData(result);
     }).catch(console.error);
   }
 
   useEffect(() => {
     getTransactions()
-  }, [walletAddress]);
+  }, [getFullLink(walletAddress)]);
 
   return (
     <div className="h-full w-full flex flex-col items-center justify-center text-white overflow-hidden gap-4 p-6">
-      {/* Wallet Info Header */}
       <div className="flex items-center w-3/4 text-lg font-medium bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 shadow-md gap-2">
         <div className="text-yellow-400 text-xl">
           <GiWallet />
@@ -39,9 +53,9 @@ export default function() {
           Wallet of&nbsp;<strong className="text-white font-mono">{getShortLink(walletAddress)}</strong>
         </div>
         <Clipboard text={walletAddress}/>
+        {formatCurrency(walletInfo?.balance || 0)}
       </div>
 
-      {/* Transactions Table */}
       <div className="w-3/4 flex-1 max-h-[80%]">
         <Table
           labels={labels}
