@@ -7,6 +7,7 @@ import BlockPage from "#/block";
 import TransactionPage from "#/transaction";
 import NotFoundPage from "#/404";
 import WalletPage from "#/wallet";
+import DetailPage from "#/detail";
 import Header from "#/header";
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
@@ -19,6 +20,7 @@ function Router({children}) {
       {path: "/blocks", element: <BlockPage/>},
       {path: "/transactions", element: <TransactionPage/>},
       {path: "/wallet/*", element: <WalletPage/>},
+      {path: "/detail/*", element: <DetailPage/>},
       {path: "*", element: <NotFoundPage/>},
     ]);
   }

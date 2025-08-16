@@ -1,6 +1,13 @@
 import {Link, useLocation} from "react-router-dom";
 import {toast} from "react-toastify";
 
+export function formatLink(short_form, full = short_form) {
+  return {
+    short: short_form,
+    full
+  };
+}
+
 export function mapLinkIfNeeded(obj, prefix = "", maxLength = 100000) {
   if (typeof obj === "object" && "short" in obj) {
     const params = new URLSearchParams(obj);
@@ -22,10 +29,10 @@ export function mapLinkIfNeeded(obj, prefix = "", maxLength = 100000) {
 }
 
 export function getLink() {
-  const params = new URLSearchParams(useLocation().search);
+  const params = new URLSearchParams(useLocation()?.search);
   return {
-    short: params.get("short"),
-    full: params.get("full"),
+    short: params?.get("short"),
+    full: params?.get("full"),
   }
 }
 

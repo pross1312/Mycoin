@@ -1,15 +1,15 @@
 // NOTE: https://etherscan.io/
-import { FaArrowRightLong } from "react-icons/fa6";
-import { AiOutlineTransaction } from "react-icons/ai";
-import { IoCubeOutline } from "react-icons/io5";
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { mapLinkIfNeeded, formatTimestamp, HorizontalSep } from "#/utils";
+import {FaArrowRightLong} from "react-icons/fa6";
+import {AiOutlineTransaction} from "react-icons/ai";
+import {IoCubeOutline} from "react-icons/io5";
+import {useState, useEffect} from "react";
+import {useNavigate} from "react-router-dom";
+import {mapLinkIfNeeded, formatTimestamp, HorizontalSep, formatLink} from "#/utils";
 import Api from "#/api";
 
 const LIST_TYPE = {
-  BLOCK: {label: "Latest Blocks", link: "VIEW ALL BLOCKS", idLinkPrefix: "/block"},
-  TRANSACTION: {label: "Latest Transactions", link: "VIEW ALL TRANSACTIONS", idLinkPrefix: "/transaction"}
+  BLOCK: {label: "Latest Blocks", link: "VIEW ALL BLOCKS", idLinkPrefix: "/detail/block"},
+  TRANSACTION: {label: "Latest Transactions", link: "VIEW ALL TRANSACTIONS", idLinkPrefix: "/detail/transaction"}
 };
 
 function LabelListComponent({idLinkPrefix = "", icon, id, timestamp, content, amount, shouldAddSepBottom}) {
@@ -85,19 +85,13 @@ export default function() {
     Api.getLatestBlocks().then(latestBlocks => {
       setBlocks(latestBlocks.map(block => { return {
         ...block,
-        id: {
-          short: block.id.toString(),
-          full: block.id.toString()
-        }
+        id: formatLink(block.id),
       }}));
     }).catch(console.error);
     Api.getLatestTransactions().then(latestTransactions => {
       setTransactions(latestTransactions.map(tx => { return {
         ...tx,
-        id: {
-          short: tx.id,
-          full: tx.id
-        }
+        id: formatLink(tx.id),
       }}));
     }).catch(console.error);
   }, []);

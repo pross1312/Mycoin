@@ -4,7 +4,6 @@ function Paginator({pagination, onClick}) {
   const currentPage = pagination?.page || 0;
   const totalPage = pagination?.totalPage || 0;
   const none = () => {};
-  console.log(currentPage, totalPage);
   return (
     <div className="flex justify-between w-fit place-items-center gap-1">
       <div onClick={currentPage > 1 ? () => onClick(1) : none} className={`pagination-box ${currentPage > 1 ? "pagination-box-enabled" : "pagination-box-disabled"}`}>

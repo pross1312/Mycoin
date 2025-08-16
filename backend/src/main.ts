@@ -171,13 +171,37 @@ app.get("/api/transactions", (req: Request, res: Response) => {
     const page = Number(req.query.page as string) || 1;
     const limit = Number(req.query.limit as string) || 10;
 
-    return success_handler(res, paginate(mycoin.blockchain.chain.slice(1).flatMap(block => block.data).map(({id, timestamp, initiator, outputs}: Transaction) => ({
+    return success_handler(res, paginate(mycoin.blockchain.chain.slice(1).flatMap((block, i) => block.data.map(({id, timestamp, initiator, outputs}: Transaction) => ({
         id,
+        block: i+1,
         initiator: format_address(initiator),
         receiver: format_address(outputs.find(txout => txout.address !== initiator)?.address || ""),
         timestamp,
         amount: outputs.reduce((acc: number, output) => (output.address !== initiator ? acc + output.amount : acc), 0)
-    })).sort((a, b) => b.timestamp - a.timestamp), page, limit));
+    }))).sort((a, b) => b.timestamp - a.timestamp), page, limit));
+});
+
+app.get("/api/transactions/block/:id", (req: Request, res: Response, next: NextFunction) => {
+    const id = parseInt(req.params.id, 10);
+    const block = mycoin.blockchain.chain[id];
+    const page = Number(req.query.page as string) || 1;
+    const limit = Number(req.query.limit as string) || 10;
+    console.log(page, limit);
+
+    if (!block) {
+        return next(new AppError(404, "Block not found"));
+    }
+
+    const transactions = paginate(block.data.map((tx: Transaction) => ({
+        id: tx.id,
+        block: id,
+        initiator: format_address(tx.initiator),
+        receiver: format_address(tx.outputs.find((txout: TransactionOutput) => txout.address !== tx.initiator)?.address || ""),
+        amount: tx.outputs.reduce((acc: number, output: TransactionOutput) => acc + (output.address === tx.initiator ? 0 : output.amount), 0),
+        timestamp: tx.timestamp
+    })), page, limit);
+
+    return success_handler(res, transactions);
 });
 
 app.get("/api/wallet", (req: Request, res: Response) => {
@@ -214,20 +238,59 @@ app.get("/api/transaction/wallet/:address", (req: Request, res: Response, next: 
     })).sort((a, b) => b.timestamp - a.timestamp), page, limit));
 });
 
+app.get("/api/detail/block/:id", (req: Request, res: Response, next: NextFunction) => {
+    const id = parseInt(req.params.id, 10);
+    console.log(id, mycoin.blockchain.chain.length);
+    const block = mycoin.blockchain.chain[id];
+    if (!block) {
+        return next(new AppError(404, "Block not found"));
+    }
+    return success_handler(res, {
+        id,
+        prevHash: block.last_hash,
+        hash: block.hash,
+        nounce: block.nounce,
+        miner: format_address(block.miner),
+        duration: block.duration,
+        transactionCount: block.data.length,
+        timestamp: block.timestamp
+    })
+});
+
+app.get("/api/detail/transaction/:id", (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id;
+
+    for (let i = 0; i < mycoin.blockchain.chain.length; i++) {
+        const block = mycoin.blockchain.chain[i];
+        const tx = block.data.find((t: Transaction) => t.id === id);
+        if (tx) {
+            return success_handler(res, {
+                id: tx.id,
+                block: i,
+                from: format_address(tx.initiator),
+                to: format_address(tx.outputs.find((txout: TransactionOutput) => txout.address !== tx.initiator)?.address || ""),
+                amount: tx.outputs.reduce((acc: number, output: TransactionOutput) => acc + (output.address === tx.initiator ? 0 : output.amount), 0),
+                timestamp: tx.timestamp
+            });
+        }
+    }
+
+    return next(new AppError(404, "Transaction not found"));
+});
+
 app.get("/api/latest-block", (req: Request, res: Response) => {
     const {length: _length} = req.query;
     let length = Number(_length);
     if (isNaN(length) || length === 0) length = 5;
     let i = Math.max(1, mycoin.blockchain.chain.length - length + 1);
-    const result = mycoin.blockchain.chain.slice(1).slice(-length!).map(x => ({
-        id: i++,
+    const result = mycoin.blockchain.chain.slice(1).slice(-length!).map((x, i) => ({
+        id: Math.max(0, mycoin.blockchain.chain.length - length) + i,
         timestamp: x.timestamp,
         amount: x.data.reduce((acc: any, x: any) => acc + x.outputs.reduce((sum: any, txo: any) => txo.amount + sum, 0), 0),
         miner: format_address(x.miner),
         transactionCount: x.data.length,
         duration: x.duration,
     })).reverse();
-    console.log(result);
     return success_handler(res, result);
 });
 
@@ -246,7 +309,7 @@ app.get("/api/latest-transaction", (req: Request, res: Response) => {
     }
     const response = result.map(x => ({
         id: x.id,
-        amount: x.outputs.reduce((acc: any, output: any) => acc + (output.address === x.initiator ? 0 : output.amount), 0),
+        amount: x.outputs.reduce((acc: number, output: TransactionOutput) => acc + (output.address === x.initiator ? 0 : output.amount), 0),
         timestamp: x.timestamp,
         from: format_address(x.initiator),
         to: format_address(x.outputs.find(txout => txout.address !== x.initiator)?.address || ""),

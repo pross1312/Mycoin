@@ -83,4 +83,22 @@ export default {
     }
     return data;
   },
+
+  getBlockTransactions: async (blockId, page = 1, limit = 10) => {
+    const [success, code, data] = await apiCall(`/transactions/block/${blockId}`, {
+      query: { page, limit }
+    });
+    if (!success) {
+      throw data;
+    }
+    return data;
+  },
+
+  getDetail: async (type, id) => {
+    const [success, code, data] = await apiCall(`/detail/${type}/${id}`);
+    if (!success) {
+      throw data;
+    }
+    return data;
+  },
 }

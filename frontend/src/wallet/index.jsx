@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {useLocation} from "react-router-dom";
 import { GiWallet } from "react-icons/gi";
-import {capitalize, getLink, getFullLink, getShortLink} from "#/utils";
+import {capitalize, getLink, getFullLink, getShortLink, formatLink} from "#/utils";
 import Api from "#/api";
 import {Table} from "#/components/table";
 import Clipboard from "#/components/clipboard";
@@ -19,7 +19,7 @@ export default function() {
 
   const getTransactions = (page = 1) => {
     Api.getWalletTransactions(getFullLink(walletAddress), page, LIMIT).then(result => {
-      result.data = capitalize(result.data);
+      result.data = capitalize(result.data.map(x => ({...x, id: formatLink(x.id)})));
       setTransactionsData(result);
     }).catch(console.error);
   }
@@ -49,7 +49,7 @@ export default function() {
           pagination={transactionsData.pagination}
           name="transactions"
           onPaginationClick={page => getTransactions(page)}
-          linkHandler={(label) => "/wallet"}
+          linkHandler={(label) => label === "Id" ? "/detail/transaction" : "/wallet" }
         />
       </div>
     </div>
