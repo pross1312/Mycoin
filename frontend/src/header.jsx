@@ -67,6 +67,7 @@ export default function() {
     const id = setInterval(() => {
       Api.getWalletInfo().then(data => {
         if (data.balance !== walletInfoRef.current.balance || data.address.full !== walletInfoRef.current.address.full || data.address.short !== walletInfoRef.current.address.short) {
+          displaySuccess("Balance changed");
           walletInfoRef.current = data;
           setWalletInfo(walletInfoRef.current);
         }

@@ -5,13 +5,13 @@ export type MessageHandler = (message: string) => string | null;
 
 export class P2PServer {
     static RECONNECT_INTERVAL = 5000;
-    sockets: Map<string, WebSocket>;
+    sockets: {[key: string]: WebSocket};
     server: WebSocketServer | undefined;
     handler: MessageHandler;
     reconnect_timer: null | ReturnType<typeof setTimeout>;
 
     constructor(message_handler: MessageHandler) {
-        this.sockets = new Map();
+        this.sockets = {};
         this.handler = message_handler;
         this.reconnect_timer = null;
     }
@@ -26,7 +26,7 @@ export class P2PServer {
 
     async connect_to_peers(): Promise<Array<WebSocket>> {
         const to_be_connected = PEERS.filter(url => {
-            const socket = this.sockets.get(url);
+            const socket = this.sockets[url];
             return socket === undefined || socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED;
         })
         if (to_be_connected.length === 0) {
@@ -56,32 +56,30 @@ export class P2PServer {
 
     broadcast(message: string) {
         console.log(`Broadcasting message to ${this.sockets.size} peers`);
-        this.sockets.forEach(socket => {
-            socket.send(message);
-        });
+        for (const key in this.sockets) {
+            this.sockets[key].send(message);
+        }
     }
 
     new_connection(socket: WebSocket, id: string) {
-        if (this.sockets.has(id)) {
-            this.sockets.get(id)!.close();
-        }
-        this.sockets.set(id, socket);
+        this.sockets[id]?.close();
+        this.sockets[id] = socket;
         socket.on('error', (err) => {
             console.log(`An error occurred on connection ${id}, error: ${err}`);
             socket.close();
-            this.sockets.delete(socket.url);
+            delete this.sockets[id];
         });
         socket.on('close', (...args) => {
             console.log(`Socket closed`);
-            this.sockets.delete(socket.url);
-        })
+            delete this.sockets[id];
+        });
         socket.on('message', data => {
             const message = data.toString('utf-8')
             const result = this.handler(message);
             if (result != null) {
                 socket.send(result);
             }
-        })
+        });
         console.log(`Socket connected ${id}`);
     }
 }

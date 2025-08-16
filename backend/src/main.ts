@@ -75,14 +75,19 @@ const p2p_server = new P2PServer((message: string): string | null => {
 
 p2p_server.listen();
 p2p_server.connect_to_peers().then(async sockets => {
-    if (sockets.length === 0 && !mycoin.load_chain(BLOCK_CHAIN_FILE)) {
+    if (mycoin.load_chain(BLOCK_CHAIN_FILE)) {
+        console.log(`Loaded blockchain data from ${BLOCK_CHAIN_FILE}`);
+        return;
+    }
+    if (sockets.length === 0) {
+        console.log(`Initialized new blockchain to ${BLOCK_CHAIN_FILE}`);
         const block = await Block.mine_block(mycoin.blockchain.last(), wallet.public_key, [wallet.new_coin_base_transaction(100)])
         mycoin.add_blocks(block);
         mycoin.store_chain(BLOCK_CHAIN_FILE);
         return;
-    } else if (sockets.length !== 0) {
-        p2p_server.broadcast(build_message(MessageType.ASK, null));
     }
+    console.log(`Asking for blockchain from ${sockets.length}`);
+    p2p_server.broadcast(build_message(MessageType.ASK, null));
 }).catch(console.error);
 
 class AppError extends Error {
